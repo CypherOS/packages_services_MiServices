@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018 Pixel Experience
+ * Copyright (C) 2019 CypherOS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,48 +14,74 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package co.aoscp.miservices.weather;
+package co.aoscp.miservices.quickspace;
 
-public class WeatherProvider {
+public class QuickspaceCard {
 
     public static final int WEATHER_UPDATE_SUCCESS = 0; // Success
     public static final int WEATHER_UPDATE_RUNNING = 1; // Update running
     public static final int WEATHER_UPDATE_ERROR = 2; // Error
 
+	public static final int EVENT_NONE = 0; // None
+	public static final int EVENT_FIRST_TIME = 1; // FirstTime
+
     private int status;
     private String conditions;
     private int temperatureMetric;
     private int temperatureImperial;
+	
+	private int eventType;
+	private String eventTitle;
+	private String eventAction;
 
-    WeatherProvider(int status, String conditions, int temperatureMetric, int temperatureImperial) {
+    public QuickspaceCard(int status, String conditions, int temperatureMetric, int temperatureImperial, 
+	            int eventType, String eventTitle, String eventAction) {
         this.status = status;
         this.conditions = conditions;
         this.temperatureMetric = temperatureMetric;
         this.temperatureImperial = temperatureImperial;
+		this.eventType = eventType;
+		this.eventTitle = eventTitle;
+		this.eventAction = eventAction;
     }
 
-    int getTemperature(boolean metric) {
+    public int getTemperature(boolean metric) {
         return metric ? this.temperatureMetric : this.temperatureImperial;
     }
 
-    int getStatus() {
+    public int getStatus() {
         return this.status;
     }
 
-    void setStatus(int status) {
+    public void setStatus(int status) {
         this.status = status;
     }
 
-    String getConditions() {
+    public String getConditions() {
         return this.conditions;
+    }
+
+	public int getEventType() {
+        return this.eventType;
+    }
+
+	public String getEventTitle() {
+        return this.eventTitle;
+    }
+
+	public String getEventAction() {
+        return this.eventAction;
     }
 
     @Override
     public String toString() {
-        return "WeatherProvider: " +
+        return "QuickspaceCard: " +
                 "status=" + getStatus() + "," +
                 "conditions=" + getConditions() + "," +
                 "temperatureMetric=" + getTemperature(true) + "," +
-                "temperatureImperial=" + getTemperature(false);
+                "temperatureImperial=" + getTemperature(false) + "," +
+				"eventType=" + getEventType() + "," +
+				"eventTitle=" + getEventTitle() + "," +
+				"eventAction=" + getEventAction();
     }
 }
