@@ -26,6 +26,8 @@ import android.net.Uri;
 import android.os.Process;
 import android.util.Log;
 
+import co.aoscp.miservices.quickspace.QuickspaceCard;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +53,7 @@ public class WeatherController {
     private List<UpdateListener> mListeners;
     private long mLastUpdated;
     private long mScheduledAlarm = 0;
-    private int mUpdateStatus = WeatherProvider.WEATHER_UPDATE_ERROR;
+    private int mUpdateStatus = QuickspaceCard.WEATHER_UPDATE_ERROR;
     private AlarmManager mAlarmManager;
 
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -137,7 +139,7 @@ public class WeatherController {
 
     private boolean needsUpdate() {
         boolean expired = System.currentTimeMillis() - mLastUpdated > WEATHER_UPDATE_INTERVAL;
-        return mUpdateStatus != WeatherProvider.WEATHER_UPDATE_SUCCESS || expired;
+        return mUpdateStatus != QuickspaceCard.WEATHER_UPDATE_SUCCESS || expired;
     }
 
     private void onScreenOn() {
