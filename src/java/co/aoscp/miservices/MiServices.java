@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import co.aoscp.miservices.quickspace.EventsController;
 import co.aoscp.miservices.weather.WeatherController;
 
 public class MiServices extends BroadcastReceiver {
@@ -30,6 +31,7 @@ public class MiServices extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "Firing up aoscp addons");
+		EventsController.get(context, true);
         WeatherController.get(context, true);
     }
 }
