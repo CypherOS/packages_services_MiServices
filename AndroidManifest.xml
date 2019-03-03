@@ -27,8 +27,8 @@
         </receiver>
 
         <provider
-            android:name=".weather.WeatherContentProvider"
-            android:authorities="co.aoscp.miservices.weather.provider"
+            android:name=".providers.QuickspaceProvider"
+            android:authorities="co.aoscp.miservices.providers.quickspace"
             android:exported="true" />
 
         <meta-data
