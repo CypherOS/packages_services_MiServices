@@ -26,6 +26,8 @@ import android.net.Uri;
 import android.os.Process;
 import android.util.Log;
 
+import co.aoscp.miservices.quickspace.QuickspaceCard;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,10 +50,10 @@ public class WeatherController {
     private boolean mIsRunning;
     private boolean mIsScreenOn = true;
 
-    private List<UpdateListener> mListeners;
+    private UpdateListener mListener;
     private long mLastUpdated;
     private long mScheduledAlarm = 0;
-    private int mUpdateStatus = WeatherProvider.WEATHER_UPDATE_ERROR;
+    private int mUpdateStatus = QuickspaceCard.WEATHER_UPDATE_ERROR;
     private AlarmManager mAlarmManager;
 
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -120,9 +122,9 @@ public class WeatherController {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                for (UpdateListener listener : mListeners) {
+                if (mListener != null) {
                     try {
-                        listener.onPostUpdate();
+                        mListener.onPostUpdate();
                     } catch (Exception ignored) {
                     }
                 }
@@ -137,7 +139,7 @@ public class WeatherController {
 
     private boolean needsUpdate() {
         boolean expired = System.currentTimeMillis() - mLastUpdated > WEATHER_UPDATE_INTERVAL;
-        return mUpdateStatus != WeatherProvider.WEATHER_UPDATE_SUCCESS || expired;
+        return mUpdateStatus != QuickspaceCard.WEATHER_UPDATE_SUCCESS || expired;
     }
 
     private void onScreenOn() {
@@ -191,11 +193,7 @@ public class WeatherController {
         mUpdateStatus = status;
     }
 
-    public void addUpdateListener(final UpdateListener listener) {
-        mListeners.add(listener);
-    }
-
-    public void removeUpdateListener(UpdateListener listener) {
-        mListeners.remove(listener);
+    public void addUpdateListener(UpdateListener listener) {
+        mListener = listener;
     }
 }
