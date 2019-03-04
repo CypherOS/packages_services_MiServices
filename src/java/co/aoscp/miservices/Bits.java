@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package co.aoscp.miservices.weather.utils;
+package co.aoscp.miservices;
 
 import android.content.Context;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -33,7 +34,7 @@ import okio.BufferedSink;
 import okio.GzipSink;
 import okio.Okio;
 
-public class Utilities {
+public class Bits {
 
     public static boolean isNetworkAvailable(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -82,5 +83,15 @@ public class Utilities {
                 }
             };
         }
+    }
+
+	public static IntentFilter getPackageIntentInfo(String pkg, String... action) {
+        IntentFilter filter = new IntentFilter();
+        for (String addAction : action) {
+            filter.addAction(addAction);
+        }
+        filter.addDataScheme("package");
+        filter.addDataSchemeSpecificPart(pkg, 0);
+        return filter;
     }
 }
