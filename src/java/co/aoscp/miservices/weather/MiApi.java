@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018 Pixel Experience
+ * Copyright (C) 2019 CypherOS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +16,10 @@
  */
 package co.aoscp.miservices.weather;
 
+import static co.aoscp.miservices.quickspace.QuickspaceCard.WEATHER_UPDATE_ERROR;
+import static co.aoscp.miservices.quickspace.QuickspaceCard.WEATHER_UPDATE_SUCCESS;
+import static co.aoscp.miservices.weather.utils.Constants.DEBUG;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.Location;
@@ -23,8 +28,12 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import co.aoscp.miservices.Bits;
+import co.aoscp.miservices.MiManager;
+import co.aoscp.miservices.quickspace.EventsController;
+import co.aoscp.miservices.quickspace.QuickspaceCard;
+import co.aoscp.miservices.weather.WeatherController;
 import co.aoscp.miservices.weather.utils.Constants;
-import co.aoscp.miservices.weather.utils.Utilities;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -56,12 +65,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import static co.aoscp.miservices.weather.utils.Constants.DEBUG;
-import static co.aoscp.miservices.weather.WeatherProvider.WEATHER_UPDATE_ERROR;
-import static co.aoscp.miservices.weather.WeatherProvider.WEATHER_UPDATE_SUCCESS;
-
-public class WeatherChannelApi implements OnFailureListener, OnCanceledListener {
-    private String TAG = "WeatherChannelApi";
+public class MiApi implements OnFailureListener, OnCanceledListener {
+    private String TAG = "MiApi";
     private boolean running;
     private LocationResult mLocationResult;
     private Handler mHandler;
@@ -71,6 +76,10 @@ public class WeatherChannelApi implements OnFailureListener, OnCanceledListener 
     private String mSunCondition;
     private OkHttpClient mHttpClient;
     private SunriseSunsetRestApi mSunriseSunsetRestApi;
+
+    private MiManager mMiManager;
+    private EventsController mEventsController;
+	private WeatherController mWeatherController;
 
     private LocationCallback locationCallback = new LocationCallback() {
         @Override
@@ -109,14 +118,14 @@ public class WeatherChannelApi implements OnFailureListener, OnCanceledListener 
         running = false;
     }
 
-    WeatherChannelApi(Context context) {
+    public MiApi(Context context) {
         running = false;
         mHandler = new Handler(Looper.getMainLooper());
         // Power balanced location check (~100 mt precision)
         mLocationRequest = new LocationRequest().setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY).create();
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
         mContext = context;
-        final File cacheFile = new File(mContext.getCacheDir(), "WeatherChannelApiCache");
+        final File cacheFile = new File(mContext.getCacheDir(), "MiApiCache");
         final Cache cache = new Cache(cacheFile, 10 * 1024 * 1024);
         mHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
@@ -125,14 +134,17 @@ public class WeatherChannelApi implements OnFailureListener, OnCanceledListener 
                 .followRedirects(false)
                 .followSslRedirects(false)
                 .addNetworkInterceptor(REWRITE_RESPONSE_INTERCEPTOR)
-                .addInterceptor(new Utilities.GzipRequestInterceptor())
+                .addInterceptor(new Bits.GzipRequestInterceptor())
                 .addInterceptor(OFFLINE_INTERCEPTOR)
                 .cache(cache)
                 .build();
         mSunriseSunsetRestApi = new SunriseSunsetRestApi(mContext);
+		mMiManager = new MiManager(mContext.getApplicationContext());
+        mEventsController = mMiManager.getQsEvents();
+		mWeatherController = mMiManager.getQsWeather();
     }
 
-    boolean isRunning() {
+    public boolean isRunning() {
         return running;
     }
 
@@ -156,7 +168,7 @@ public class WeatherChannelApi implements OnFailureListener, OnCanceledListener 
         @Override
         public Response intercept(Chain chain) throws IOException {
             Request request = chain.request();
-            if (!(Utilities.isNetworkAvailable(mContext))) {
+            if (!(Bits.isNetworkAvailable(mContext))) {
                 request = request.newBuilder()
                         .header("Cache-Control", "public, only-if-cached, max-stale=" + Constants.API_CACHE_NO_CONNECTION_MAX_TIME)
                         .build();
@@ -165,10 +177,11 @@ public class WeatherChannelApi implements OnFailureListener, OnCanceledListener 
         }
     };
 
-    WeatherProvider getResult() {
+    public QuickspaceCard getResult() {
         if (isRunning() || mLocationResult == null || mLocationResult.getLastLocation() == null) {
-            WeatherController.get(mContext, false).setUpdateStatus(WEATHER_UPDATE_ERROR);
-            return new WeatherProvider(WEATHER_UPDATE_ERROR, "", 0, 0);
+            mWeatherController.setUpdateStatus(WEATHER_UPDATE_ERROR);
+            return new QuickspaceCard(WEATHER_UPDATE_ERROR, "", 0, 0, mEventsController.getEventType(),
+                    mEventsController.getEventTitle(), mEventsController.getEventAction());
         }
         Location location = mLocationResult.getLastLocation();
         if (DEBUG) Log.d(TAG, "getResult");
@@ -177,7 +190,7 @@ public class WeatherChannelApi implements OnFailureListener, OnCanceledListener 
 
         try {
             Response response = mHttpClient.newCall(new Request.Builder()
-                    .tag("WeatherChannelApi")
+                    .tag("MiApi")
                     .url("https://weather.com/weather/today/l/" + location.getLatitude() + "," + location.getLongitude() + "?par=google")
                     .build()).execute();
             if (response.body() != null && response.isSuccessful()) {
@@ -192,20 +205,22 @@ public class WeatherChannelApi implements OnFailureListener, OnCanceledListener 
                     throw new Exception("tempImperial or conditionIconElementClassName is empty");
                 }
                 String parsedConditions = parseCondition(conditionIconElement.className());
-                if (Utilities.isLegacyMode()) {
+                if (Bits.isLegacyMode()) {
                     parsedConditions = parseConditionLegacy(parsedConditions);
                 }
                 int tempMetric = (int) Math.round((Integer.valueOf(tempImperial) - 32.0) * 5 / 9);
                 if (DEBUG)
                     Log.d(TAG, "tempImperial: " + tempImperial + " tempMetric: " + tempMetric + " parsedConditions: " + parsedConditions);
-                WeatherController.get(mContext, false).setUpdateStatus(WEATHER_UPDATE_SUCCESS);
-                return new WeatherProvider(WEATHER_UPDATE_SUCCESS, parsedConditions, tempMetric, Integer.valueOf(tempImperial));
+                mWeatherController.setUpdateStatus(WEATHER_UPDATE_SUCCESS);
+                return new QuickspaceCard(WEATHER_UPDATE_SUCCESS, parsedConditions, tempMetric, Integer.valueOf(tempImperial),
+                             mEventsController.getEventType(), mEventsController.getEventTitle(), mEventsController.getEventAction());
             }
         } catch (Exception e) {
             if (DEBUG) Log.e(TAG, "Exception", e);
         }
-        WeatherController.get(mContext, false).setUpdateStatus(WEATHER_UPDATE_ERROR);
-        return new WeatherProvider(WEATHER_UPDATE_ERROR, "", 0, 0);
+        mWeatherController.setUpdateStatus(WEATHER_UPDATE_ERROR);
+        return new QuickspaceCard(WEATHER_UPDATE_ERROR, "", 0, 0, mEventsController.getEventType(),
+                     mEventsController.getEventTitle(), mEventsController.getEventAction());
     }
 
     private String parseCondition(String toCompare) {
@@ -312,7 +327,7 @@ public class WeatherChannelApi implements OnFailureListener, OnCanceledListener 
     }
 
     @SuppressLint("MissingPermission")
-    void queryLocation() {
+    public void queryLocation() {
         if (running) {
             return;
         }
