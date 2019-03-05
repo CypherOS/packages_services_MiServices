@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018 Pixel Experience
+ * Copyright (C) 2019 CypherOS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package co.aoscp.miservices.weather;
+package co.aoscp.miservices.providers;
 
 import static co.aoscp.miservices.weather.utils.Constants.DEBUG;
 
@@ -26,36 +27,56 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import co.aoscp.miservices.MiManager;
+import co.aoscp.miservices.quickspace.EventsController.EventListener;
+import co.aoscp.miservices.quickspace.QuickspaceCard;
+import co.aoscp.miservices.weather.MiApi;
 import co.aoscp.miservices.weather.WeatherController.UpdateListener;
 
-public class WeatherContentProvider extends ContentProvider implements UpdateListener {
+public class QuickspaceProvider extends ContentProvider implements UpdateListener, EventListener {
 
-    private static final String TAG = "WeatherContentProvider";
+    private static final String TAG = "QuickspaceProvider";
+
     private static final String COLUMN_STATUS = "status";
     private static final String COLUMN_CONDITIONS = "conditions";
     private static final String COLUMN_TEMPERATURE_METRIC = "temperatureMetric";
     private static final String COLUMN_TEMPERATURE_IMPERIAL = "temperatureImperial";
-    private static final Uri WEATHER_URI = Uri.parse("content://co.aoscp.miservices.weather.provider/weather");
-    private static final String[] PROJECTION_DEFAULT_WEATHER = new String[]{
+    private static final String COLUMN_EVENT_TYPE = "eventType";
+    private static final String COLUMN_EVENT_TITLE = "eventTitle";
+    private static final String COLUMN_EVENT_ACTION = "eventAction";
+
+    private static final Uri QUICKSPACE_URI = Uri.parse("content://co.aoscp.miservices.providers.quickspace/card");
+    private static final String[] PROJECTION = new String[]{
             COLUMN_STATUS,
             COLUMN_CONDITIONS,
             COLUMN_TEMPERATURE_METRIC,
-            COLUMN_TEMPERATURE_IMPERIAL
+            COLUMN_TEMPERATURE_IMPERIAL,
+            COLUMN_EVENT_TYPE,
+            COLUMN_EVENT_TITLE,
+            COLUMN_EVENT_ACTION
     };
 
-    private WeatherChannelApi mWeatherChannelApi;
+    private MiApi mMiApi;
+	private MiManager mMiManager;
     protected ContentResolver mContentResolver;
 
     @Override
     public boolean onCreate() {
         mContentResolver = getContext().getContentResolver();
-        WeatherController.get(getContext(), false).addUpdateListener(this);
+		mMiManager = new MiManager(getContext().getApplicationContext());
+		mMiManager.getMiEvents().addEventListener(this);
+		mMiManager.getMiWeather().addUpdateListener(this);
         return true;
     }
-  
+
     @Override
     public void onPostUpdate() {
-        mContentResolver.notifyChange(WEATHER_URI, null /* observer */);
+        mContentResolver.notifyChange(QUICKSPACE_URI, null /* observer */);
+    }
+
+    @Override
+    public void onNewEvent() {
+        mContentResolver.notifyChange(QUICKSPACE_URI, null /* observer */);
     }
 
     @Override
@@ -67,26 +88,29 @@ public class WeatherContentProvider extends ContentProvider implements UpdateLis
             String sortOrder) {
 
         if (DEBUG) Log.i(TAG, "query: " + uri.toString());
-        if (mWeatherChannelApi == null) {
-            mWeatherChannelApi = new WeatherChannelApi(getContext());
+        if (mMiApi == null) {
+            mMiApi = new MiApi(getContext());
         }
-        mWeatherChannelApi.queryLocation();
-        while (mWeatherChannelApi.isRunning()) {
+        mMiApi.queryLocation();
+        while (mMiApi.isRunning()) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        WeatherProvider provider = mWeatherChannelApi.getResult();
-        if (DEBUG) Log.d(TAG, provider.toString());
-        final MatrixCursor result = new MatrixCursor(PROJECTION_DEFAULT_WEATHER);
-        if (provider != null) {
+        QuickspaceCard card = mMiApi.getResult();
+        if (DEBUG) Log.d(TAG, card.toString());
+        final MatrixCursor result = new MatrixCursor(PROJECTION);
+        if (card != null) {
             result.newRow()
-                    .add(COLUMN_STATUS, provider.getStatus())
-                    .add(COLUMN_CONDITIONS, provider.getConditions())
-                    .add(COLUMN_TEMPERATURE_METRIC, provider.getTemperature(true))
-                    .add(COLUMN_TEMPERATURE_IMPERIAL, provider.getTemperature(false));
+                    .add(COLUMN_STATUS, card.getStatus())
+                    .add(COLUMN_CONDITIONS, card.getConditions())
+                    .add(COLUMN_TEMPERATURE_METRIC, card.getTemperature(true))
+                    .add(COLUMN_TEMPERATURE_IMPERIAL, card.getTemperature(false))
+                    .add(COLUMN_EVENT_TYPE, card.getEventType())
+                    .add(COLUMN_EVENT_TITLE, card.getEventTitle())
+                    .add(COLUMN_EVENT_ACTION, card.getEventAction());
             return result;
         }
 

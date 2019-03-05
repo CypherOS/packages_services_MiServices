@@ -16,21 +16,34 @@
  */
 package co.aoscp.miservices;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 
-public class MiServices extends BroadcastReceiver {
+import co.aoscp.miservices.quickspace.EventsController;
+import co.aoscp.miservices.weather.WeatherController;
 
-    private static final String TAG = "MiServices";
+public class MiManager {
 
-	private MiManager mMiManager;
+    private static final String TAG = "MiManager";
 
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "Starting up");
-		mMiManager = new MiManager(context.getApplicationContext());
-		mMiManager.addControllers();
+	private Context mContext;
+	private EventsController mEventsController;
+	private WeatherController mWeatherController;
+
+    public MiManager(Context context) {
+        mContext = context;
     }
+
+	public void addControllers() {
+		mEventsController = new EventsController(mContext);
+		mWeatherController = new WeatherController(mContext);
+	}
+
+	public EventsController getMiEvents() {
+		return mEventsController;
+	}
+
+	public WeatherController getMiWeather() {
+		return mWeatherController;
+	}
 }
