@@ -16,20 +16,70 @@
  */
 package co.aoscp.miservices;
 
-import android.content.BroadcastReceiver;
+import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import co.aoscp.miservices.onetime.IControllers;
+import co.aoscp.miservices.onetime.MiScreenReceiver;
+import co.aoscp.miservices.onetime.MiUpdateReceiver;
+import co.aoscp.miservices.quickspace.EventsController;
 import co.aoscp.miservices.weather.WeatherController;
 
-public class MiServices extends BroadcastReceiver {
+import java.util.List;
+import java.util.LinkedList;
 
+public class MiServices extends IntentService implements IControllers {
     private static final String TAG = "MiServices";
 
+    private final Context mContext;
+    private final MiScreenReceiver mScreenReceiver;
+	private final MiUpdateReceiver mUpdateReceiver;
+
+    private final List<IControllers> mControllers = new LinkedList<IControllers>();
+
+    public MiServices(Context context) {
+        super("MiServices");
+        mContext = context;
+        Log.d(TAG, "Starting");
+        mScreenReceiver = new MiScreenReceiver(context, this);
+		mUpdateReceiver = new MiUpdateReceiver(context, this);
+
+        mControllers.add(new EventsController(context));
+        mControllers.add(new WeatherController(context));
+        updateState();
+    }
+
     @Override
-    public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "Firing up aoscp addons");
-        WeatherController.get(context, true);
+    protected void onHandleIntent(Intent intent) {
+    }
+
+    @Override
+    public void onScreenOn() {
+        for (IControllers controllers : mControllers) {
+            controllers.onScreenOn();
+        }
+    }
+
+    @Override
+    public void onScreenOff() {
+        for (IControllers controllers : mControllers) {
+            controllers.onScreenOff();
+        }
+    }
+
+	@Override
+	public String getUpdateIntent() {
+		for (IControllers controllers : mControllers) {
+            return controllers.getUpdateIntent();
+		}
+		return null;
+    }
+
+    public void updateState() {
+		for (IControllers controllers : mControllers) {
+            controllers.onUpdate(false);
+        }
     }
 }
