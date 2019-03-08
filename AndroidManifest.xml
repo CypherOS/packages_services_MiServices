@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="false"
@@ -17,7 +18,7 @@
         tools:ignore="GoogleAppIndexingWarning">
 
         <receiver
-            android:name=".MiServices"
+            android:name=".receivers.MiReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -27,8 +28,8 @@
         </receiver>
 
         <provider
-            android:name=".weather.WeatherContentProvider"
-            android:authorities="co.aoscp.miservices.weather.provider"
+            android:name=".providers.QuickspaceProvider"
+            android:authorities="co.aoscp.miservices.providers.quickspace"
             android:exported="true" />
 
         <meta-data

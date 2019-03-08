@@ -14,22 +14,26 @@
  * You should have received a copy of the GNU General Public License
  * along with MiServices.  If not, see <http://www.gnu.org/licenses/>.
  */
-package co.aoscp.miservices;
+package co.aoscp.miservices.receivers;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import co.aoscp.miservices.weather.WeatherController;
+import co.aoscp.miservices.MiManager;
 
-public class MiServices extends BroadcastReceiver {
+public class MiReceiver extends BroadcastReceiver {
 
-    private static final String TAG = "MiServices";
+    private static final String TAG = "MiReceiver";
+
+    private MiManager mMiManager;
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "Firing up aoscp addons");
-        WeatherController.get(context, true);
+        Log.d(TAG, "Boot completed, starting quickspace loop");
+        mMiManager = new MiManager(context.getApplicationContext());
+        mMiManager.getQsEvents().setBootCompleted();
+        mMiManager.getQsWeather().setBootCompleted();
     }
 }
