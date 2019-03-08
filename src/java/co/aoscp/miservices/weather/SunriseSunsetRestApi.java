@@ -19,8 +19,8 @@ import android.content.Context;
 import android.os.StrictMode;
 import android.util.Log;
 
+import co.aoscp.miservices.Bits;
 import co.aoscp.miservices.weather.utils.Constants;
-import co.aoscp.miservices.weather.utils.Utilities;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
@@ -63,7 +63,7 @@ class SunriseSunsetRestApi {
                 .followRedirects(false)
                 .followSslRedirects(false)
                 .addNetworkInterceptor(REWRITE_RESPONSE_INTERCEPTOR)
-                .addInterceptor(new Utilities.GzipRequestInterceptor())
+                .addInterceptor(new Bits.GzipRequestInterceptor())
                 .addInterceptor(OFFLINE_INTERCEPTOR)
                 .cache(cache)
                 .build();
@@ -89,7 +89,7 @@ class SunriseSunsetRestApi {
         @Override
         public Response intercept(Chain chain) throws IOException {
             Request request = chain.request();
-            if (!(Utilities.isNetworkAvailable(mContext))) {
+            if (!(Bits.isNetworkAvailable(mContext))) {
                 request = request.newBuilder()
                         .header("Cache-Control", "public, only-if-cached, max-stale=" + Constants.API_CACHE_NO_CONNECTION_MAX_TIME)
                         .build();
