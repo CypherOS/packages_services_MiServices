@@ -16,20 +16,79 @@
  */
 package co.aoscp.miservices;
 
-import android.content.BroadcastReceiver;
+import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.util.Log;
 
-import co.aoscp.miservices.weather.WeatherController;
+import co.aoscp.miservices.onetime.IControllers;
+import co.aoscp.miservices.onetime.MiScreenReceiver;
+import co.aoscp.miservices.onetime.MiUpdateReceiver;
 
-public class MiServices extends BroadcastReceiver {
+import java.util.List;
+import java.util.LinkedList;
 
+public class MiServices extends IntentService implements IControllers {
     private static final String TAG = "MiServices";
 
+    private final Context mContext;
+
+    private final PowerManager mPowerManager;
+    private final PowerManager.WakeLock mWakeLock;
+
+    private final MiScreenReceiver mScreenReceiver;
+	private final MiUpdateReceiver mUpdateReceiver;
+
+    private final List<IControllers> mControllers = new LinkedList<IControllers>();
+
+    public MiServices(Context context) {
+        super("MiServices");
+        mContext = context;
+        Log.d(TAG, "Starting");
+        mScreenReceiver = new MiScreenReceiver(context, this);
+		mUpdateReceiver = new MiUpdateReceiver(context, this);
+
+        mControllers.add(new EventsController(context));
+        mControllers.add(new WeatherController(context));
+
+        mPowerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MiServicesWakeLock");
+        updateState();
+    }
+
     @Override
-    public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "Firing up aoscp addons");
-        WeatherController.get(context, true);
+    protected void onHandleIntent(Intent intent) {
+    }
+
+    @Override
+    public void screenTurnedOn() {
+        if (!mWakeLock.isHeld()) {
+            mWakeLock.acquire();
+        }
+        for (IControllers controllers : mControllers) {
+            controllers.onScreenOn();
+        }
+    }
+
+    @Override
+    public void screenTurnedOff() {
+        if (mWakeLock.isHeld()) {
+            mWakeLock.release();
+        }
+        for (IControllers controllers : mControllers) {
+            controllers.onScreenOff();
+        }
+    }
+
+    public void updateState() {
+        if (!mPowerManager.isInteractive()) return;
+        if (!mWakeLock.isHeld()) {
+            mWakeLock.acquire();
+        }
+		for (IControllers controllers : mControllers) {
+            controllers.onUpdate(false);
+        }
     }
 }
