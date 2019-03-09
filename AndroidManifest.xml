@@ -1,23 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="co.aoscp.miservices">
+    package="co.aoscp.miservices"
+    coreApp="true"
+    android:sharedUserId="android.uid.system">
 
     <uses-sdk android:targetSdkVersion="28" android:minSdkVersion="28"/>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="false"
         android:allowClearUserData="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        tools:ignore="GoogleAppIndexingWarning">
+        tools:ignore="GoogleAppIndexingWarning"
+        android:persistent="true">
 
         <receiver
-            android:name=".MiServices"
+            android:name=".onetime.MiBootReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -26,9 +31,17 @@
             </intent-filter>
         </receiver>
 
+        <service
+            android:name=".onetime.ServiceInitializer"
+            android:permission="ServiceInitializer">
+            <intent-filter>
+                <action android:name="ServiceInitializer"/>
+            </intent-filter>
+        </service>
+
         <provider
-            android:name=".weather.WeatherContentProvider"
-            android:authorities="co.aoscp.miservices.weather.provider"
+            android:name=".providers.QuickspaceProvider"
+            android:authorities="co.aoscp.miservices.providers.quickspace"
             android:exported="true" />
 
         <meta-data
