@@ -173,8 +173,7 @@ public class MiApi implements OnFailureListener, OnCanceledListener {
 
     public QuickspaceCard getResult() {
         if (isRunning() || mLocationResult == null || mLocationResult.getLastLocation() == null) {
-            return new QuickspaceCard(WEATHER_UPDATE_ERROR, "", 0, 0, mEventsController.getEventType(),
-                    mEventsController.getEventTitle(), mEventsController.getEventAction());
+            return new QuickspaceCard(WEATHER_UPDATE_ERROR, "", 0, 0, mEventsController.getEventType(), mEventsController.getEventTitle());
         }
         Location location = mLocationResult.getLastLocation();
         if (DEBUG) Log.d(TAG, "getResult");
@@ -205,13 +204,12 @@ public class MiApi implements OnFailureListener, OnCanceledListener {
                 if (DEBUG)
                     Log.d(TAG, "tempImperial: " + tempImperial + " tempMetric: " + tempMetric + " parsedConditions: " + parsedConditions);
                 return new QuickspaceCard(WEATHER_UPDATE_SUCCESS, parsedConditions, tempMetric, Integer.valueOf(tempImperial),
-                             mEventsController.getEventType(), mEventsController.getEventTitle(), mEventsController.getEventAction());
+                            mEventsController.getEventType(), mEventsController.getEventTitle());
             }
         } catch (Exception e) {
             if (DEBUG) Log.e(TAG, "Exception", e);
         }
-        return new QuickspaceCard(WEATHER_UPDATE_ERROR, "", 0, 0, mEventsController.getEventType(),
-                     mEventsController.getEventTitle(), mEventsController.getEventAction());
+        return new QuickspaceCard(WEATHER_UPDATE_ERROR, "", 0, 0, mEventsController.getEventType(), mEventsController.getEventTitle());
     }
 
     private String parseCondition(String toCompare) {
