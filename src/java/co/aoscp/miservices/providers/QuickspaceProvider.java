@@ -40,7 +40,6 @@ public class QuickspaceProvider extends ContentProvider {
     private static final String COLUMN_TEMPERATURE_IMPERIAL = "temperatureImperial";
     private static final String COLUMN_EVENT_TYPE = "eventType";
     private static final String COLUMN_EVENT_TITLE = "eventTitle";
-    private static final String COLUMN_EVENT_ACTION = "eventAction";
 
     public static final Uri QUICKSPACE_URI = Uri.parse("content://co.aoscp.miservices.providers.quickspace/card");
     private static final String[] PROJECTION = new String[]{
@@ -49,8 +48,7 @@ public class QuickspaceProvider extends ContentProvider {
             COLUMN_TEMPERATURE_METRIC,
             COLUMN_TEMPERATURE_IMPERIAL,
             COLUMN_EVENT_TYPE,
-            COLUMN_EVENT_TITLE,
-            COLUMN_EVENT_ACTION
+            COLUMN_EVENT_TITLE
     };
 
     private MiApi mMiApi;
@@ -90,8 +88,7 @@ public class QuickspaceProvider extends ContentProvider {
                     .add(COLUMN_TEMPERATURE_METRIC, card.getTemperature(true))
                     .add(COLUMN_TEMPERATURE_IMPERIAL, card.getTemperature(false))
                     .add(COLUMN_EVENT_TYPE, card.getEventType())
-                    .add(COLUMN_EVENT_TITLE, card.getEventTitle())
-                    .add(COLUMN_EVENT_ACTION, card.getEventAction());
+                    .add(COLUMN_EVENT_TITLE, card.getEventTitle());
             return result;
         }
 
