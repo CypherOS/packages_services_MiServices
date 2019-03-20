@@ -39,6 +39,11 @@
             </intent-filter>
         </service>
 
+		<provider
+            android:name=".providers.AmbientHistoryProvider"
+            android:authorities="co.aoscp.miservices.providers.ambient"
+            android:exported="true" />
+
         <provider
             android:name=".providers.QuickspaceProvider"
             android:authorities="co.aoscp.miservices.providers.quickspace"
