@@ -30,7 +30,8 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
     prebuilt-jsoup \
     prebuilt-okhttp \
     prebuilt-okio \
-    prebuilt-sunrisesunset
+    prebuilt-sunrisesunset \
+	prebuilt-acrCloud
 
 LOCAL_STATIC_JAVA_AAR_LIBRARIES := \
     prebuilt-play-services-basement \
@@ -60,4 +61,13 @@ LOCAL_MODULE := prebuilt-sunrisesunset
 LOCAL_SRC_FILES := libs/SunriseSunsetCalculator-1.2.jar
 LOCAL_UNINSTALLABLE_MODULE := true
 LOCAL_SDK_VERSION := current
+include $(BUILD_PREBUILT)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := prebuilt-acrCloud
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_CLASS := JAVA_LIBRARIES
+LOCAL_SRC_FILES := libs/libAcrCloud.jar
+LOCAL_UNINSTALLABLE_MODULE := true
+LOCAL_SDK_VERSION := 27
 include $(BUILD_PREBUILT)
