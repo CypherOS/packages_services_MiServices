@@ -33,6 +33,7 @@ import co.aoscp.miservices.Bits;
 import co.aoscp.miservices.R;
 import co.aoscp.miservices.onetime.IControllers;
 import co.aoscp.miservices.providers.QuickspaceProvider;
+import co.aoscp.miservices.quickspace.events.AmbientPlayEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,9 +57,11 @@ public class EventsController implements IControllers {
     private boolean mIsRunning;
     private boolean mIsScreenOn = true;
     private boolean mIsRegistered = false;
-    private long mLastUpdated;
+    private long mLastUpdated = 0;
 
     private boolean mIsFirstTime;
+
+	private AmbientPlayEvent mAmbientPlayEvent;
 
     private BroadcastReceiver mInteractionReceiver = new BroadcastReceiver() {
         @Override
@@ -86,11 +89,15 @@ public class EventsController implements IControllers {
         mContext.registerReceiver(mInteractionReceiver, Bits.getPackageIntentInfo(LOVEGOOD_PACKAGE, INTENT_ACTION_INTERACTED));
         mIsRegistered = true;
         sController = this;
+		initEvents():
+    }
+
+	private void initEvents() {
+        mAmbientPlayEvent = new AmbientPlayEvent(mContext, this);
     }
 
     private void checkForEvents() {
         deviceIntroEvent();
-        mContext.getContentResolver().notifyChange(QuickspaceProvider.QUICKSPACE_URI, null /* observer */);
     }
 
     @Override
@@ -130,7 +137,10 @@ public class EventsController implements IControllers {
         int eventType = QuickspaceCard.EVENT_NONE;
         if (mIsFirstTime) {
             eventType = QuickspaceCard.EVENT_FIRST_TIME;
-        }
+        } else if (mAmbientPlayEvent.isEvent()) {
+			eventType = QuickspaceCard.EVENT_AMBIENT_PLAY;
+		}
+		mLastUpdated = System.currentTimeMillis();
         return eventType;
     }
 
@@ -138,19 +148,17 @@ public class EventsController implements IControllers {
         String eventTitle = null;
         if (mIsFirstTime) {
             eventTitle = mContext.getString(R.string.quick_event_first_time);
-        }
+        } else if (mAmbientPlayEvent.isEvent()) {
+			eventTitle = mAmbientPlayEvent.getContent();
+		}
         return eventTitle;
-    }
-
-    public String getEventAction() {
-        String eventAction = null;
-        if (mIsFirstTime) {
-            eventAction = mContext.getString(R.string.quick_event_first_time_action);
-        }
-        return eventAction;
     }
 
     private void deviceIntroEvent() {
         mIsFirstTime = Settings.System.getInt(mContext.getContentResolver(), SETTING_DEVICE_INTRO_COMPLETED, 0) == 0;
     }
+
+	public void notifyObservers() {
+		mContext.getContentResolver().notifyChange(QuickspaceProvider.QUICKSPACE_URI, null /* observer */);
+	}
 }
