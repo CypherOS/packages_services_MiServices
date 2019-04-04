@@ -23,7 +23,6 @@ public class QuickspaceCard {
     public static final int WEATHER_UPDATE_ERROR = 2; // Error
 
     public static final int EVENT_NONE = 0; // None
-    public static final int EVENT_FIRST_TIME = 1; // FirstTime
 
     private int status;
     private String conditions;

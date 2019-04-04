@@ -45,30 +45,13 @@ public class EventsController implements IControllers {
     private static final String TAG = "EventsController";
 
     private static final int EVENT_CHECK_INTERVAL = 60 * 10 * 1000; // 10 minutes
-    private static final String SETTING_DEVICE_INTRO_COMPLETED = "device_introduction_completed";
-
-    private static final String LOVEGOOD_PACKAGE = "com.android.launcher3";
-    private static final String INTENT_ACTION_INTERACTED = "co.aoscp.lovegood.quickspace.ACTION_INTERACTED";
 
     private Context mContext;
     private static EventsController sController;
 
     private boolean mIsRunning;
     private boolean mIsScreenOn = true;
-    private boolean mIsRegistered = false;
     private long mLastUpdated;
-
-    private boolean mIsFirstTime;
-
-    private BroadcastReceiver mInteractionReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent == null) return;
-            if (INTENT_ACTION_INTERACTED.equals(intent.getAction())) {
-                onUpdate(false);
-            }
-        }
-    };
 
     public static EventsController get(Context context) {
         if (sController == null) {
@@ -79,23 +62,12 @@ public class EventsController implements IControllers {
 
     public EventsController(Context context) {
         mContext = context;
-        if (mIsRegistered) {
-            context.unregisterReceiver(mInteractionReceiver);
-            mIsRegistered = false;
-        }
-        mContext.registerReceiver(mInteractionReceiver, Bits.getPackageIntentInfo(LOVEGOOD_PACKAGE, INTENT_ACTION_INTERACTED));
-        mIsRegistered = true;
         sController = this;
-    }
-
-    private void checkForEvents() {
-        deviceIntroEvent();
-        mContext.getContentResolver().notifyChange(QuickspaceProvider.QUICKSPACE_URI, null /* observer */);
     }
 
     @Override
     public void onUpdate(boolean reset) {
-        checkForEvents();
+		// No op
     }
 
     private boolean needsUpdate() {
@@ -128,29 +100,16 @@ public class EventsController implements IControllers {
 
     public int getEventType() {
         int eventType = QuickspaceCard.EVENT_NONE;
-        if (mIsFirstTime) {
-            eventType = QuickspaceCard.EVENT_FIRST_TIME;
-        }
         return eventType;
     }
 
     public String getEventTitle() {
         String eventTitle = null;
-        if (mIsFirstTime) {
-            eventTitle = mContext.getString(R.string.quick_event_first_time);
-        }
         return eventTitle;
     }
 
     public String getEventAction() {
         String eventAction = null;
-        if (mIsFirstTime) {
-            eventAction = mContext.getString(R.string.quick_event_first_time_action);
-        }
         return eventAction;
-    }
-
-    private void deviceIntroEvent() {
-        mIsFirstTime = Settings.System.getInt(mContext.getContentResolver(), SETTING_DEVICE_INTRO_COMPLETED, 0) == 0;
     }
 }
