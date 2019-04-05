@@ -44,6 +44,11 @@
             android:authorities="co.aoscp.miservices.providers.ambient"
             android:exported="true" />
 
+		<provider
+            android:name=".providers.BatteryEstimateBridgeProvider"
+            android:authorities="co.aoscp.miservices.providers.batterybridge"
+            android:exported="true" />
+
         <provider
             android:name=".providers.QuickspaceProvider"
             android:authorities="co.aoscp.miservices.providers.quickspace"
